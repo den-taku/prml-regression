@@ -37,7 +37,7 @@ fn main() {
     let lambda = 0.5;
     let lambda_i = {
         let mut o = [0.0; 32 * 32];
-        for i in 0..32 {
+        for i in 0..31 {
             o[i * 32 + i] = lambda;
         }
         Matrix::<32, 32, _, _>::new(o)
@@ -68,7 +68,7 @@ fn main() {
     let lambda = 1.0;
     let lambda_i = {
         let mut o = [0.0; 32 * 32];
-        for i in 0..32 {
+        for i in 0..31 {
             o[i * 32 + i] = lambda;
         }
         Matrix::<32, 32, _, _>::new(o)
@@ -99,7 +99,7 @@ fn main() {
     let lambda = 10.0;
     let lambda_i = {
         let mut o = [0.0; 32 * 32];
-        for i in 0..32 {
+        for i in 0..31 {
             o[i * 32 + i] = lambda;
         }
         Matrix::<32, 32, _, _>::new(o)
@@ -150,8 +150,8 @@ fn main() {
 
     // 05
     // select effective parameters
-    let effective = select_parameters();
-    let (phi, phi_t) = design_matrix(&train_x, &effective);
+    let compress_train_x = compress_x(train_x.clone());
+    let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let left = phi_t.clone() * phi.clone();
     let right = phi_t.clone() * train_t.clone();
@@ -164,7 +164,38 @@ fn main() {
     write_to("./parameters/weight06_select.csv", content)
         .expect("fail to save weight to ./parameters/weight06_select.csv");
 
-    let inference = design_matrix(&test_x, &effective).0 * w;
+    let inference = compress_x(test_x.clone()) * w;
+    println!(
+        "test: {} / 70",
+        (0..70)
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count()
+    );
+
+    // 06
+    // select effective parameters
+    // regularization: lambda = 10.0
+    let lambda = 0.5;
+    let lambda_i = {
+        let mut o = [0.0; 20 * 20];
+        for i in 0..19 {
+            o[i * 19 + i] = lambda;
+        }
+        Matrix::<20, 20, _, _>::new(o)
+    };
+
+    let left = lambda_i + phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    write_to("./parameters/weight07_select_reg.csv", content)
+        .expect("fail to save weight to ./parameters/weight07_select_ref.csv");
+
+    let inference = compress_x(test_x.clone()) * w;
     println!(
         "test: {} / 70",
         (0..70)
@@ -173,7 +204,36 @@ fn main() {
     );
 }
 
-fn select_parameters() -> [Box<dyn Fn([f64; 32]) -> f64>; 32] {
+fn compress_x<const N: usize>(
+    x: Matrix<N, 32, [f64; N * 32], f64>,
+) -> Matrix<N, 20, [f64; N * 20], f64> {
+    let mut matrix = [0.0; N * 20];
+    for i in 0..N {
+        matrix[i * 20] = x[i * 32 + 4];
+        matrix[i * 20 + 1] = x[i * 32 + 5];
+        matrix[i * 20 + 2] = x[i * 32 + 6];
+        matrix[i * 20 + 3] = x[i * 32 + 10];
+        matrix[i * 20 + 4] = x[i * 32 + 11];
+        matrix[i * 20 + 5] = x[i * 32 + 16];
+        matrix[i * 20 + 6] = x[i * 32 + 17];
+        matrix[i * 20 + 7] = x[i * 32 + 18];
+        matrix[i * 20 + 8] = x[i * 32 + 19];
+        matrix[i * 20 + 9] = x[i * 32 + 21];
+        matrix[i * 20 + 10] = x[i * 32 + 22];
+        matrix[i * 20 + 11] = x[i * 32 + 23];
+        matrix[i * 20 + 12] = x[i * 32 + 24];
+        matrix[i * 20 + 13] = x[i * 32 + 25];
+        matrix[i * 20 + 14] = x[i * 32 + 26];
+        matrix[i * 20 + 15] = x[i * 32 + 27];
+        matrix[i * 20 + 16] = x[i * 32 + 28];
+        matrix[i * 20 + 17] = x[i * 32 + 29];
+        matrix[i * 20 + 18] = x[i * 32 + 30];
+        matrix[i * 20 + 19] = x[i * 32 + 31];
+    }
+    Matrix::new(matrix)
+}
+
+fn _select_parameters() -> [Box<dyn Fn([f64; 32]) -> f64>; 32] {
     let select = move |i: usize| move |e: [f64; 32]| e[i];
     let none = move |_: [f64; 32]| 0.0;
     [
