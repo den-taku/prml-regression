@@ -4,15 +4,7 @@
 use dntk_matrix::matrix::*;
 
 fn main() {
-    let data: [i32; 145 * 33] = {
-        use rand::Rng;
-        let mut data = include!("../data/DATA.csv");
-        let mut rng = rand::thread_rng();
-        for i in 0..145 {
-            swap(i, rng.gen::<usize>() % 145, &mut data)
-        }
-        data
-    };
+    let data: [i32; 145 * 33] = include!("../data/rand.csv");
 
     let train_x = {
         let mut train_x = [0.0; 75 * 32];
@@ -87,13 +79,4 @@ fn write_to(path: &str, content: String) -> std::io::Result<()> {
     write!(file, "{}", content)?;
     file.flush()?;
     Ok(())
-}
-
-fn swap(i: usize, j: usize, slice: &mut [i32]) {
-    let mut tmp = [0; 33];
-    for k in 0..33 {
-        tmp[k] = slice[i * 33 + k];
-        slice[i * 33 + k] = slice[j * 33 + k];
-        slice[j * 33 + k] = tmp[k];
-    }
 }
