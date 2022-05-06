@@ -25,8 +25,8 @@ fn main() {
 
     let inference = test_x.clone() * w;
     println!(
-        "test: {} / 70",
-        (0..70)
+        "test: {} / 45",
+        (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count()
     );
@@ -56,8 +56,8 @@ fn main() {
 
     let inference = test_x.clone() * w;
     println!(
-        "test: {} / 70",
-        (0..70)
+        "test: {} / 45",
+        (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count()
     );
@@ -87,8 +87,8 @@ fn main() {
 
     let inference = test_x.clone() * w;
     println!(
-        "test: {} / 70",
-        (0..70)
+        "test: {} / 45",
+        (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count()
     );
@@ -118,8 +118,8 @@ fn main() {
 
     let inference = test_x.clone() * w;
     println!(
-        "test: {} / 70",
-        (0..70)
+        "test: {} / 45",
+        (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count()
     );
@@ -142,8 +142,8 @@ fn main() {
 
     let inference = design_matrix(&test_x, &gauss_0_31).0 * w;
     println!(
-        "test: {} / 70",
-        (0..70)
+        "test: {} / 45",
+        (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count()
     );
@@ -166,8 +166,8 @@ fn main() {
 
     let inference = compress_x(test_x.clone()) * w;
     println!(
-        "test: {} / 70",
-        (0..70)
+        "test: {} / 45",
+        (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count()
     );
@@ -197,8 +197,8 @@ fn main() {
 
     let inference = compress_x(test_x.clone()) * w;
     println!(
-        "test: {} / 70",
-        (0..70)
+        "test: {} / 45",
+        (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count()
     );
@@ -390,53 +390,53 @@ fn write_to(path: &str, content: String) -> std::io::Result<()> {
 
 fn data() -> (
     (
-        Matrix<75, 32, [f64; 75 * 32], f64>,
-        Matrix<75, 1, [f64; 75 * 1], f64>,
+        Matrix<100, 32, [f64; 100 * 32], f64>,
+        Matrix<100, 1, [f64; 100 * 1], f64>,
     ),
     (
-        Matrix<70, 32, [f64; 70 * 32], f64>,
-        Matrix<70, 1, [f64; 70 * 1], f64>,
+        Matrix<45, 32, [f64; 45 * 32], f64>,
+        Matrix<45, 1, [f64; 45 * 1], f64>,
     ),
 ) {
     let data: [i32; 145 * 33] = include!("../data/rand.csv");
 
     let train_x = {
-        let mut train_x = [0.0; 75 * 32];
-        for i in 0..75 {
+        let mut train_x = [0.0; 100 * 32];
+        for i in 0..100 {
             for j in 1..32 {
                 train_x[i * 32 + j - 1] = data[i * 33 + j] as f64;
             }
             // for bias
             train_x[i * 32 + 31] = 1.0;
         }
-        Matrix::<75, 32, _, _>::new(train_x)
+        Matrix::<100, 32, _, _>::new(train_x)
     };
     let test_x = {
-        let mut test_x = [0.0; 70 * 32];
-        for i in 75..145 {
+        let mut test_x = [0.0; 45 * 32];
+        for i in 100..145 {
             for j in 1..32 {
-                test_x[(i - 75) * 32 + j - 1] = data[i * 33 + j] as f64;
+                test_x[(i - 100) * 32 + j - 1] = data[i * 33 + j] as f64;
             }
             // for bias
-            test_x[(i - 75) * 32 + 31] = 1.0;
+            test_x[(i - 100) * 32 + 31] = 1.0;
         }
-        Matrix::<70, 32, _, _>::new(test_x)
+        Matrix::<45, 32, _, _>::new(test_x)
     };
 
     let train_t = {
-        let mut train_t = [0.0; 1 * 75];
-        for i in 0..75 {
+        let mut train_t = [0.0; 1 * 100];
+        for i in 0..100 {
             train_t[i] = data[i * 33 + 32] as f64;
         }
-        Matrix::<75, 1, _, _>::new(train_t)
+        Matrix::<100, 1, _, _>::new(train_t)
     };
     let test_t = {
-        let mut test_t = [0.0; 1 * 70];
+        let mut test_t = [0.0; 1 * 45];
 
-        for i in 75..145 {
-            test_t[i - 75] = data[i * 33 + 32] as f64;
+        for i in 100..145 {
+            test_t[i - 100] = data[i * 33 + 32] as f64;
         }
-        Matrix::<70, 1, _, _>::new(test_t)
+        Matrix::<45, 1, _, _>::new(test_t)
     };
 
     ((train_x, train_t), (test_x, test_t))
