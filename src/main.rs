@@ -23,13 +23,24 @@ fn main() {
     write_to("./parameters/weight01_simple.csv", content)
         .expect("fail to save weight to ./parameters/weight01_simple.csv");
 
-    let inference = test_x.clone() * w;
+    let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / 45",
+        "test: {} / 45\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
-            .count()
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0,
     );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
 
     // 02
     // y(x, w) = w_0 + w_1*x_1 + ... + w_D * x_D
@@ -54,13 +65,25 @@ fn main() {
     write_to("./parameters/weight02_simple_reg.csv", content)
         .expect("fail to save weight to ./parameters/weight02_simple_reg.csv");
 
-    let inference = test_x.clone() * w;
+    let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / 45",
+        "test: {} / 45\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
-            .count()
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.clone().0.iter().map(|e| e * e).sum::<f64>(),
     );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
 
     // 03
     // y(x, w) = w_0 + w_1*x_1 + ... + w_D * x_D
@@ -85,13 +108,25 @@ fn main() {
     write_to("./parameters/weight03_simple_reg.csv", content)
         .expect("fail to save weight to ./parameters/weight03_simple_reg.csv");
 
-    let inference = test_x.clone() * w;
+    let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / 45",
+        "test: {} / 45\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
-            .count()
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
     );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
 
     // 04
     // y(x, w) = w_0 + w_1*x_1 + ... + w_D * x_D
@@ -116,13 +151,25 @@ fn main() {
     write_to("./parameters/weight04_simple_reg.csv", content)
         .expect("fail to save weight to ./parameters/weight04_simple_reg.csv");
 
-    let inference = test_x.clone() * w;
+    let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / 45",
+        "test: {} / 45\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
-            .count()
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
     );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
 
     // 05
     // phi_i = exp(-(x_i - u)^2 / 2s^2)
@@ -142,13 +189,17 @@ fn main() {
 
     let inference = design_matrix(&test_x, &gauss_0_31).0 * w;
     println!(
-        "test: {} / 45",
+        "test: {} / 45\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
-            .count()
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0,
     );
 
-    // 05
+    // 06
     // select effective parameters
     let compress_train_x = compress_x(train_x.clone());
     let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
@@ -166,16 +217,20 @@ fn main() {
 
     let inference = compress_x(test_x.clone()) * w;
     println!(
-        "test: {} / 45",
+        "test: {} / 45\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
-            .count()
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0,
     );
 
-    // 06
+    // 07
     // select effective parameters
     // regularization: lambda = 10.0
-    let lambda = 0.5;
+    let lambda = 1.0;
     let lambda_i = {
         let mut o = [0.0; 20 * 20];
         for i in 0..19 {
@@ -195,12 +250,89 @@ fn main() {
     write_to("./parameters/weight07_select_reg.csv", content)
         .expect("fail to save weight to ./parameters/weight07_select_ref.csv");
 
-    let inference = compress_x(test_x.clone()) * w;
+    let inference = compress_x(test_x.clone()) * w.clone();
     println!(
-        "test: {} / 45",
+        "test: {} / 45\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
-            .count()
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
+    );
+
+    // 08
+    // select effective parameters
+    // regularization: lambda = 10.0
+    let lambda = 10.0;
+    let lambda_i = {
+        let mut o = [0.0; 20 * 20];
+        for i in 0..19 {
+            o[i * 19 + i] = lambda;
+        }
+        Matrix::<20, 20, _, _>::new(o)
+    };
+
+    let left = lambda_i + phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    write_to("./parameters/weight08_select_reg.csv", content)
+        .expect("fail to save weight to ./parameters/weight08_select_ref.csv");
+
+    let inference = compress_x(test_x.clone()) * w.clone();
+    println!(
+        "test: {} / 45\nerr: {}",
+        (0..test_t.0.len())
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
+    );
+
+    // 09
+    // select effective parameters inspired by w of 01 and 02
+    // regularization: lambda = 10.0
+    let lambda = 1.0;
+    let lambda_i = {
+        let mut o = [0.0; 20 * 20];
+        for i in 0..19 {
+            o[i * 19 + i] = lambda;
+        }
+        Matrix::<20, 20, _, _>::new(o)
+    };
+
+    let left = lambda_i + phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    write_to("./parameters/weight07_select_reg.csv", content)
+        .expect("fail to save weight to ./parameters/weight07_select_ref.csv");
+
+    let inference = compress_x(test_x.clone()) * w.clone();
+    println!(
+        "test: {} / 45\nerr: {}",
+        (0..test_t.0.len())
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
     );
 }
 
