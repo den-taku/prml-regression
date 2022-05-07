@@ -1119,7 +1119,7 @@ fn main() {
     for i in 0..w.0.len() {
         content.push_str(&format!("{},\n", w[i]))
     }
-    let file = &format!("weight{count}_all_reg.csv");
+    let file = &format!("weight{count}_all.csv");
     write_to(&format!("./parameters/{}", file), content)
         .expect(&format!("fail to save weight to ./parameters/{}", file));
 
