@@ -4,7 +4,9 @@
 use dntk_matrix::matrix::*;
 
 fn main() {
-    let ((train_x, train_t), (test_x, test_t)) = data();
+    const TRAIN_CASE: usize = 115;
+    const TEST_CASE: usize = 30;
+    let ((train_x, train_t), (test_x, test_t)) = data::<TRAIN_CASE, TEST_CASE>();
 
     // 01
     // y(x, w) = w_0 + w_1*x_1 + ... + w_D * x_D
@@ -25,7 +27,7 @@ fn main() {
 
     let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / 45\nerr: {}",
+        "test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -67,7 +69,7 @@ fn main() {
 
     let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / 45\nerr: {}",
+        "test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -110,7 +112,7 @@ fn main() {
 
     let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / 45\nerr: {}",
+        "test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -153,7 +155,7 @@ fn main() {
 
     let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / 45\nerr: {}",
+        "test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -189,7 +191,7 @@ fn main() {
 
     let inference = design_matrix(&test_x, &gauss_0_31).0 * w;
     println!(
-        "test: {} / 45\nerr: {}",
+        "test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -217,7 +219,7 @@ fn main() {
 
     let inference = compress_x(test_x.clone()) * w;
     println!(
-        "test: {} / 45\nerr: {}",
+        "test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -252,7 +254,7 @@ fn main() {
 
     let inference = compress_x(test_x.clone()) * w.clone();
     println!(
-        "test: {} / 45\nerr: {}",
+        "test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -288,7 +290,7 @@ fn main() {
 
     let inference = compress_x(test_x.clone()) * w.clone();
     println!(
-        "test: {} / 45\nerr: {}",
+        "test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -319,9 +321,13 @@ fn main() {
 
     let inference = compress_x_weight(test_x.clone()) * w.clone();
     println!(
-        "{}: test: {} / 45\nerr: {}",
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
+            .map(|i| {
+                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
+                i
+            })
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
         (0..test_t.0.len())
@@ -367,7 +373,7 @@ fn main() {
 
     let inference = compress_x_weight(test_x.clone()) * w.clone();
     println!(
-        "{}: test: {} / 45\nerr: {}",
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
@@ -416,7 +422,7 @@ fn main() {
 
     let inference = compress_x_weight(test_x.clone()) * w.clone();
     println!(
-        "{}: test: {} / 45\nerr: {}",
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
@@ -465,7 +471,7 @@ fn main() {
 
     let inference = compress_x_weight(test_x.clone()) * w.clone();
     println!(
-        "{}: test: {} / 45\nerr: {}",
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
@@ -504,7 +510,7 @@ fn main() {
 
     let inference = compress_x_weight2(test_x.clone()) * w.clone();
     println!(
-        "{}: test: {} / 45\nerr: {}",
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
@@ -521,6 +527,84 @@ fn main() {
             .collect::<Vec<_>>();
     order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
     // dbg!("{:#?}", order);
+
+    // 14
+    let count = 14;
+    // select effective parameters inspired by w of 01 ~ 02
+    let (phi, phi_t) = design_matrix(&compress_x_weight(train_x.clone()), &basis());
+    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
+
+    let left = phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = "weight14_select_weight_gauss.csv";
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference = design_matrix(&compress_x_weight(test_x.clone()), &basis()).0 * w.clone();
+    println!(
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .map(|i| {
+                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
+                i
+            })
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0,
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
+}
+
+fn basis() -> [Box<dyn Fn([f64; 10]) -> f64>; 19] {
+    let gauss = move |u: f64, s: f64, i: usize| {
+        move |e: [f64; 10]| f64::exp(-(e[i] - u) * (e[i] - u) / 2.0 / (s * s))
+    };
+    [
+        // Box::new(gauss.clone()(2.0, 1.0, 0)),
+        // Box::new(gauss.clone()(1.5, 1.0, 1)),
+        // Box::new(gauss.clone()(2.0, 1.0, 2)),
+        // Box::new(gauss.clone()(3.0, 1.0, 3)),
+        // Box::new(gauss.clone()(1.5, 1.0, 4)),
+        // Box::new(gauss.clone()(1.5, 1.0, 5)),
+        // Box::new(gauss.clone()(1.5, 1.0, 6)),
+        // Box::new(gauss.clone()(3.0, 1.0, 7)),
+        // Box::new(gauss.clone()(2.5, 1.0, 8)),
+        Box::new(|e: [f64; 10]| e[0]),
+        Box::new(|e: [f64; 10]| e[1]),
+        Box::new(|e: [f64; 10]| e[2]),
+        Box::new(|e: [f64; 10]| e[3]),
+        Box::new(|e: [f64; 10]| e[4]),
+        Box::new(|e: [f64; 10]| e[5]),
+        Box::new(|e: [f64; 10]| e[6]),
+        Box::new(|e: [f64; 10]| e[7]),
+        Box::new(|e: [f64; 10]| e[8]),
+        Box::new(|e: [f64; 10]| e[9]),
+        Box::new(|e: [f64; 10]| e[0] * e[0]),
+        Box::new(|e: [f64; 10]| e[1] * e[1]),
+        Box::new(|e: [f64; 10]| e[2] * e[2]),
+        Box::new(|e: [f64; 10]| e[3] * e[3]),
+        Box::new(|e: [f64; 10]| e[4] * e[4]),
+        Box::new(|e: [f64; 10]| e[5] * e[5]),
+        Box::new(|e: [f64; 10]| e[6] * e[6]),
+        Box::new(|e: [f64; 10]| e[7] * e[7]),
+        Box::new(|e: [f64; 10]| e[8] * e[8]),
+    ]
 }
 
 fn compress_x_weight2<const N: usize>(
@@ -666,14 +750,14 @@ fn gauss_slice() -> [Box<dyn Fn([f64; 32]) -> f64>; 32] {
     ]
 }
 
-fn design_matrix<const N: usize, const M: usize>(
+fn design_matrix<const N: usize, const M: usize, const L: usize>(
     x: &Matrix<N, M, [f64; N * M], f64>,
-    phi: &[Box<dyn Fn([f64; M]) -> f64>; M],
+    phi: &[Box<dyn Fn([f64; M]) -> f64>; L],
 ) -> (
-    Matrix<N, M, [f64; N * M], f64>,
-    Matrix<M, N, [f64; M * N], f64>,
+    Matrix<N, L, [f64; N * L], f64>,
+    Matrix<L, N, [f64; L * N], f64>,
 ) {
-    let mut matrix = [0.0; N * M];
+    let mut matrix = [0.0; N * L];
     for i in 0..N {
         let x_i = {
             let mut slice = [0.0; M];
@@ -682,8 +766,8 @@ fn design_matrix<const N: usize, const M: usize>(
             }
             slice
         };
-        for j in 0..M {
-            matrix[i * M + j] = phi[j](x_i.clone())
+        for j in 0..L {
+            matrix[i * L + j] = phi[j](x_i.clone())
         }
     }
     (Matrix::new(matrix.clone()), Matrix::new(matrix).transpose())
@@ -691,7 +775,7 @@ fn design_matrix<const N: usize, const M: usize>(
 
 #[test]
 fn for_design_matrix() {
-    let ((train_x, _), (_, _)) = data();
+    let ((train_x, _), (_, _)) = data::<100, 45>();
     let select = move |i: usize| move |e: [f64; 32]| e[i];
     let effective: [Box<dyn Fn([f64; 32]) -> f64>; 32] = [
         Box::new(select.clone()(0)),
@@ -741,55 +825,55 @@ fn write_to(path: &str, content: String) -> std::io::Result<()> {
     Ok(())
 }
 
-fn data() -> (
+fn data<const TRAIN: usize, const TEST: usize>() -> (
     (
-        Matrix<100, 32, [f64; 100 * 32], f64>,
-        Matrix<100, 1, [f64; 100 * 1], f64>,
+        Matrix<TRAIN, 32, [f64; TRAIN * 32], f64>,
+        Matrix<TRAIN, 1, [f64; TRAIN * 1], f64>,
     ),
     (
-        Matrix<45, 32, [f64; 45 * 32], f64>,
-        Matrix<45, 1, [f64; 45 * 1], f64>,
+        Matrix<TEST, 32, [f64; TEST * 32], f64>,
+        Matrix<TEST, 1, [f64; TEST * 1], f64>,
     ),
 ) {
     let data: [i32; 145 * 33] = include!("../data/rand.csv");
 
     let train_x = {
-        let mut train_x = [0.0; 100 * 32];
-        for i in 0..100 {
+        let mut train_x = [0.0; TRAIN * 32];
+        for i in 0..TRAIN {
             for j in 1..32 {
                 train_x[i * 32 + j - 1] = data[i * 33 + j] as f64;
             }
             // for bias
             train_x[i * 32 + 31] = 1.0;
         }
-        Matrix::<100, 32, _, _>::new(train_x)
+        Matrix::<TRAIN, 32, _, _>::new(train_x)
     };
     let test_x = {
-        let mut test_x = [0.0; 45 * 32];
-        for i in 100..145 {
+        let mut test_x = [0.0; TEST * 32];
+        for i in TRAIN..TRAIN + TEST {
             for j in 1..32 {
-                test_x[(i - 100) * 32 + j - 1] = data[i * 33 + j] as f64;
+                test_x[(i - TRAIN) * 32 + j - 1] = data[i * 33 + j] as f64;
             }
             // for bias
-            test_x[(i - 100) * 32 + 31] = 1.0;
+            test_x[(i - TRAIN) * 32 + 31] = 1.0;
         }
-        Matrix::<45, 32, _, _>::new(test_x)
+        Matrix::<TEST, 32, _, _>::new(test_x)
     };
 
     let train_t = {
-        let mut train_t = [0.0; 1 * 100];
-        for i in 0..100 {
+        let mut train_t = [0.0; TRAIN * 1];
+        for i in 0..TRAIN {
             train_t[i] = data[i * 33 + 32] as f64;
         }
-        Matrix::<100, 1, _, _>::new(train_t)
+        Matrix::<TRAIN, 1, _, _>::new(train_t)
     };
     let test_t = {
-        let mut test_t = [0.0; 1 * 45];
+        let mut test_t = [0.0; TEST * 1];
 
-        for i in 100..145 {
-            test_t[i - 100] = data[i * 33 + 32] as f64;
+        for i in TRAIN..TRAIN + TEST {
+            test_t[i - TRAIN] = data[i * 33 + 32] as f64;
         }
-        Matrix::<45, 1, _, _>::new(test_t)
+        Matrix::<TEST, 1, _, _>::new(test_t)
     };
 
     ((train_x, train_t), (test_x, test_t))
