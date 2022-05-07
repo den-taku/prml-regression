@@ -1177,7 +1177,7 @@ fn main() {
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_all(&us));
     // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
-    let lambda = 5.0;
+    let lambda = 1e-5;
     let lambda_i = {
         const SIZE: usize = 156;
         let mut o = [0.0; SIZE * SIZE];
