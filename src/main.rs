@@ -870,6 +870,654 @@ fn main() {
             .collect::<Vec<_>>();
     order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
     // dbg!("{:#?}", order);
+
+    // 21
+    let count = 21;
+    // sigmoid fitting
+    let mut us = [0.0; 32];
+    for i in 0..TRAIN_CASE {
+        for j in 0..32 {
+            us[j] += train_x[i * 32 + j];
+        }
+    }
+    for u in &mut us {
+        *u /= TRAIN_CASE as f64;
+    }
+    let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_sigmoid(&us));
+    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
+
+    let left = phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = &format!("weight{count}_sigmoid.csv");
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference = design_matrix(&test_x.clone(), &basis_sigmoid(&us)).0 * w.clone();
+    println!(
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .map(|i| {
+                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
+                i
+            })
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0,
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
+
+    // 22
+    let count = 22;
+    // gauss fitting with reg
+    let mut us = [0.0; 32];
+    for i in 0..TRAIN_CASE {
+        for j in 0..32 {
+            us[j] += train_x[i * 32 + j];
+        }
+    }
+    for u in &mut us {
+        *u /= TRAIN_CASE as f64;
+    }
+    let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_sigmoid(&us));
+    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
+
+    let lambda = 2.0;
+    let lambda_i = {
+        const SIZE: usize = 63;
+        let mut o = [0.0; SIZE * SIZE];
+        for i in 0..SIZE {
+            o[i * SIZE + i] = lambda;
+        }
+        Matrix::<SIZE, SIZE, _, _>::new(o)
+    };
+
+    let left = lambda_i + phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = &format!("weight{count}_gauss_reg.csv");
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference = design_matrix(&test_x.clone(), &basis_sigmoid(&us)).0 * w.clone();
+    println!(
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .map(|i| {
+                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
+                i
+            })
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0,
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+
+    // 23
+    let count = 23;
+    // gauss fitting with compress
+    let mut us = [0.0; 32];
+    for i in 0..TRAIN_CASE {
+        for j in 0..32 {
+            us[j] += train_x[i * 32 + j];
+        }
+    }
+    for u in &mut us {
+        *u /= TRAIN_CASE as f64;
+    }
+    let phi = compress_x_gauss(design_matrix(&train_x.clone(), &basis_gauss(&us)).0);
+    let phi_t = phi.clone().transpose();
+
+    let left = phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = &format!("weight{count}_gauss_compress.csv");
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference =
+        compress_x_gauss(design_matrix(&test_x.clone(), &basis_gauss(&us)).0) * w.clone();
+    println!(
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .map(|i| {
+                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
+                i
+            })
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0,
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
+
+    // 24
+    let count = 24;
+    // gauss fitting with compress
+    let mut us = [0.0; 32];
+    for i in 0..TRAIN_CASE {
+        for j in 0..32 {
+            us[j] += train_x[i * 32 + j];
+        }
+    }
+    for u in &mut us {
+        *u /= TRAIN_CASE as f64;
+    }
+    let phi = compress_x_gauss(design_matrix(&train_x.clone(), &basis_gauss(&us)).0);
+    let phi_t = phi.clone().transpose();
+
+    let lambda = 10.0;
+    let lambda_i = {
+        const SIZE: usize = 20;
+        let mut o = [0.0; SIZE * SIZE];
+        for i in 0..SIZE {
+            o[i * SIZE + i] = lambda;
+        }
+        Matrix::<SIZE, SIZE, _, _>::new(o)
+    };
+
+    let left = lambda_i + phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = &format!("weight{count}_gauss_compress_reg.csv");
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference =
+        compress_x_gauss(design_matrix(&test_x.clone(), &basis_gauss(&us)).0) * w.clone();
+    println!(
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .map(|i| {
+                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
+                i
+            })
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0,
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
+
+    // 25
+    let count = 25;
+    // all
+    let mut us = [0.0; 32];
+    for i in 0..TRAIN_CASE {
+        for j in 0..32 {
+            us[j] += train_x[i * 32 + j];
+        }
+    }
+    for u in &mut us {
+        *u /= TRAIN_CASE as f64;
+    }
+    let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_all(&us));
+    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
+
+    let left = phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = &format!("weight{count}_all_reg.csv");
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference = design_matrix(&test_x.clone(), &basis_all(&us)).0 * w.clone();
+    println!(
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .map(|i| {
+                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
+                i
+            })
+            .filter_map(|i| (if inference[i].round() >= 7.0 {
+                7.0
+            } else {
+                inference[i].round()
+            } as i64
+                == test_t[i] as i64)
+                .then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (if inference[i].round() >= 7.0 {
+                7.0
+            } else {
+                inference[i].round()
+            } - test_t[i])
+                * (if inference[i].round() >= 7.0 {
+                    7.0
+                } else {
+                    inference[i].round()
+                } - test_t[i]))
+            .sum::<f64>()
+            / 2.0,
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
+
+    // 26
+    let count = 26;
+    // all with reg
+    let mut us = [0.0; 32];
+    for i in 0..TRAIN_CASE {
+        for j in 0..32 {
+            us[j] += train_x[i * 32 + j];
+        }
+    }
+    for u in &mut us {
+        *u /= TRAIN_CASE as f64;
+    }
+    let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_all(&us));
+    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
+
+    let lambda = 5.0;
+    let lambda_i = {
+        const SIZE: usize = 156;
+        let mut o = [0.0; SIZE * SIZE];
+        for i in 0..SIZE {
+            o[i * SIZE + i] = lambda;
+        }
+        Matrix::<SIZE, SIZE, _, _>::new(o)
+    };
+
+    let left = lambda_i + phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = &format!("weight{count}_all_reg.csv");
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference = design_matrix(&test_x.clone(), &basis_all(&us)).0 * w.clone();
+    println!(
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .map(|i| {
+                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
+                i
+            })
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+}
+
+fn basis_all(u: &[f64; 32]) -> [Box<dyn Fn([f64; 32]) -> f64>; 156] {
+    let s = 0.5f64;
+    let gauss = move |u: f64, i: usize| {
+        move |e: [f64; 32]| f64::exp(-(e[i] - u) * (e[i] - u) / 2.0 / (s * s))
+    };
+    let sigmoid =
+        move |u: f64, i: usize| move |e: [f64; 32]| 1.0 / (1.0 + f64::exp(-(e[i] - u) / s));
+    [
+        // Box::new(gauss.clone()(2.0, 1.0, 0)),
+        // Box::new(gauss.clone()(1.5, 1.0, 1)),
+        // Box::new(gauss.clone()(2.0, 1.0, 2)),
+        // Box::new(gauss.clone()(3.0, 1.0, 3)),
+        // Box::new(gauss.clone()(1.5, 1.0, 4)),
+        // Box::new(gauss.clone()(1.5, 1.0, 5)),
+        // Box::new(gauss.clone()(1.5, 1.0, 6)),
+        // Box::new(gauss.clone()(3.0, 1.0, 7)),
+        // Box::new(gauss.clone()(2.5, 1.0, 8)),
+        Box::new(|e: [f64; 32]| e[0]),
+        Box::new(|e: [f64; 32]| e[1]),
+        Box::new(|e: [f64; 32]| e[2]),
+        Box::new(|e: [f64; 32]| e[3]),
+        Box::new(|e: [f64; 32]| e[4]),
+        Box::new(|e: [f64; 32]| e[5]),
+        Box::new(|e: [f64; 32]| e[6]),
+        Box::new(|e: [f64; 32]| e[7]),
+        Box::new(|e: [f64; 32]| e[8]),
+        Box::new(|e: [f64; 32]| e[9]),
+        Box::new(|e: [f64; 32]| e[10]),
+        Box::new(|e: [f64; 32]| e[11]),
+        Box::new(|e: [f64; 32]| e[12]),
+        Box::new(|e: [f64; 32]| e[13]),
+        Box::new(|e: [f64; 32]| e[14]),
+        Box::new(|e: [f64; 32]| e[15]),
+        Box::new(|e: [f64; 32]| e[16]),
+        Box::new(|e: [f64; 32]| e[17]),
+        Box::new(|e: [f64; 32]| e[18]),
+        Box::new(|e: [f64; 32]| e[19]),
+        Box::new(|e: [f64; 32]| e[20]),
+        Box::new(|e: [f64; 32]| e[21]),
+        Box::new(|e: [f64; 32]| e[22]),
+        Box::new(|e: [f64; 32]| e[23]),
+        Box::new(|e: [f64; 32]| e[24]),
+        Box::new(|e: [f64; 32]| e[25]),
+        Box::new(|e: [f64; 32]| e[26]),
+        Box::new(|e: [f64; 32]| e[27]),
+        Box::new(|e: [f64; 32]| e[28]),
+        Box::new(|e: [f64; 32]| e[29]),
+        Box::new(|e: [f64; 32]| e[30]),
+        Box::new(|e: [f64; 32]| e[31]),
+        Box::new(|e: [f64; 32]| e[0] * e[0]),
+        Box::new(|e: [f64; 32]| e[1] * e[1]),
+        Box::new(|e: [f64; 32]| e[2] * e[2]),
+        Box::new(|e: [f64; 32]| e[3] * e[3]),
+        Box::new(|e: [f64; 32]| e[4] * e[4]),
+        Box::new(|e: [f64; 32]| e[5] * e[5]),
+        Box::new(|e: [f64; 32]| e[6] * e[6]),
+        Box::new(|e: [f64; 32]| e[7] * e[7]),
+        Box::new(|e: [f64; 32]| e[8] * e[8]),
+        Box::new(|e: [f64; 32]| e[9] * e[9]),
+        Box::new(|e: [f64; 32]| e[10] * e[10]),
+        Box::new(|e: [f64; 32]| e[11] * e[11]),
+        Box::new(|e: [f64; 32]| e[12] * e[12]),
+        Box::new(|e: [f64; 32]| e[13] * e[13]),
+        Box::new(|e: [f64; 32]| e[14] * e[14]),
+        Box::new(|e: [f64; 32]| e[15] * e[15]),
+        Box::new(|e: [f64; 32]| e[16] * e[16]),
+        Box::new(|e: [f64; 32]| e[17] * e[17]),
+        Box::new(|e: [f64; 32]| e[18] * e[18]),
+        Box::new(|e: [f64; 32]| e[19] * e[19]),
+        Box::new(|e: [f64; 32]| e[20] * e[20]),
+        Box::new(|e: [f64; 32]| e[21] * e[21]),
+        Box::new(|e: [f64; 32]| e[22] * e[22]),
+        Box::new(|e: [f64; 32]| e[23] * e[23]),
+        Box::new(|e: [f64; 32]| e[24] * e[24]),
+        Box::new(|e: [f64; 32]| e[25] * e[25]),
+        Box::new(|e: [f64; 32]| e[26] * e[26]),
+        Box::new(|e: [f64; 32]| e[27] * e[27]),
+        Box::new(|e: [f64; 32]| e[28] * e[28]),
+        Box::new(|e: [f64; 32]| e[29] * e[29]),
+        Box::new(|e: [f64; 32]| e[30] * e[30]),
+        Box::new(|e: [f64; 32]| e[0] * e[0] * e[0]),
+        Box::new(|e: [f64; 32]| e[1] * e[1] * e[1]),
+        Box::new(|e: [f64; 32]| e[2] * e[2] * e[2]),
+        Box::new(|e: [f64; 32]| e[3] * e[3] * e[3]),
+        Box::new(|e: [f64; 32]| e[4] * e[4] * e[4]),
+        Box::new(|e: [f64; 32]| e[5] * e[5] * e[5]),
+        Box::new(|e: [f64; 32]| e[6] * e[6] * e[6]),
+        Box::new(|e: [f64; 32]| e[7] * e[7] * e[7]),
+        Box::new(|e: [f64; 32]| e[8] * e[8] * e[8]),
+        Box::new(|e: [f64; 32]| e[9] * e[9] * e[9]),
+        Box::new(|e: [f64; 32]| e[10] * e[10] * e[10]),
+        Box::new(|e: [f64; 32]| e[11] * e[11] * e[11]),
+        Box::new(|e: [f64; 32]| e[12] * e[12] * e[12]),
+        Box::new(|e: [f64; 32]| e[13] * e[13] * e[13]),
+        Box::new(|e: [f64; 32]| e[14] * e[14] * e[14]),
+        Box::new(|e: [f64; 32]| e[15] * e[15] * e[15]),
+        Box::new(|e: [f64; 32]| e[16] * e[16] * e[16]),
+        Box::new(|e: [f64; 32]| e[17] * e[17] * e[17]),
+        Box::new(|e: [f64; 32]| e[18] * e[18] * e[18]),
+        Box::new(|e: [f64; 32]| e[19] * e[19] * e[19]),
+        Box::new(|e: [f64; 32]| e[20] * e[20] * e[20]),
+        Box::new(|e: [f64; 32]| e[21] * e[21] * e[21]),
+        Box::new(|e: [f64; 32]| e[22] * e[22] * e[22]),
+        Box::new(|e: [f64; 32]| e[23] * e[23] * e[23]),
+        Box::new(|e: [f64; 32]| e[24] * e[24] * e[24]),
+        Box::new(|e: [f64; 32]| e[25] * e[25] * e[25]),
+        Box::new(|e: [f64; 32]| e[26] * e[26] * e[26]),
+        Box::new(|e: [f64; 32]| e[27] * e[27] * e[27]),
+        Box::new(|e: [f64; 32]| e[28] * e[28] * e[28]),
+        Box::new(|e: [f64; 32]| e[29] * e[29] * e[29]),
+        Box::new(|e: [f64; 32]| e[30] * e[30] * e[30]),
+        Box::new(gauss.clone()(u[0], 0)),
+        Box::new(gauss.clone()(u[1], 1)),
+        Box::new(gauss.clone()(u[2], 2)),
+        Box::new(gauss.clone()(u[3], 3)),
+        Box::new(gauss.clone()(u[4], 4)),
+        Box::new(gauss.clone()(u[5], 5)),
+        Box::new(gauss.clone()(u[6], 6)),
+        Box::new(gauss.clone()(u[7], 7)),
+        Box::new(gauss.clone()(u[8], 8)),
+        Box::new(gauss.clone()(u[9], 9)),
+        Box::new(gauss.clone()(u[10], 10)),
+        Box::new(gauss.clone()(u[11], 11)),
+        Box::new(gauss.clone()(u[12], 12)),
+        Box::new(gauss.clone()(u[13], 13)),
+        Box::new(gauss.clone()(u[14], 14)),
+        Box::new(gauss.clone()(u[15], 15)),
+        Box::new(gauss.clone()(u[16], 16)),
+        Box::new(gauss.clone()(u[17], 17)),
+        Box::new(gauss.clone()(u[18], 18)),
+        Box::new(gauss.clone()(u[19], 19)),
+        Box::new(gauss.clone()(u[20], 20)),
+        Box::new(gauss.clone()(u[21], 21)),
+        Box::new(gauss.clone()(u[22], 22)),
+        Box::new(gauss.clone()(u[23], 23)),
+        Box::new(gauss.clone()(u[24], 24)),
+        Box::new(gauss.clone()(u[25], 25)),
+        Box::new(gauss.clone()(u[26], 26)),
+        Box::new(gauss.clone()(u[27], 27)),
+        Box::new(gauss.clone()(u[28], 28)),
+        Box::new(gauss.clone()(u[29], 29)),
+        Box::new(gauss.clone()(u[30], 30)),
+        Box::new(sigmoid.clone()(u[0], 0)),
+        Box::new(sigmoid.clone()(u[1], 1)),
+        Box::new(sigmoid.clone()(u[2], 2)),
+        Box::new(sigmoid.clone()(u[3], 3)),
+        Box::new(sigmoid.clone()(u[4], 4)),
+        Box::new(sigmoid.clone()(u[5], 5)),
+        Box::new(sigmoid.clone()(u[6], 6)),
+        Box::new(sigmoid.clone()(u[7], 7)),
+        Box::new(sigmoid.clone()(u[8], 8)),
+        Box::new(sigmoid.clone()(u[9], 9)),
+        Box::new(sigmoid.clone()(u[10], 10)),
+        Box::new(sigmoid.clone()(u[11], 11)),
+        Box::new(sigmoid.clone()(u[12], 12)),
+        Box::new(sigmoid.clone()(u[13], 13)),
+        Box::new(sigmoid.clone()(u[14], 14)),
+        Box::new(sigmoid.clone()(u[15], 15)),
+        Box::new(sigmoid.clone()(u[16], 16)),
+        Box::new(sigmoid.clone()(u[17], 17)),
+        Box::new(sigmoid.clone()(u[18], 18)),
+        Box::new(sigmoid.clone()(u[19], 19)),
+        Box::new(sigmoid.clone()(u[20], 20)),
+        Box::new(sigmoid.clone()(u[21], 21)),
+        Box::new(sigmoid.clone()(u[22], 22)),
+        Box::new(sigmoid.clone()(u[23], 23)),
+        Box::new(sigmoid.clone()(u[24], 24)),
+        Box::new(sigmoid.clone()(u[25], 25)),
+        Box::new(sigmoid.clone()(u[26], 26)),
+        Box::new(sigmoid.clone()(u[27], 27)),
+        Box::new(sigmoid.clone()(u[28], 28)),
+        Box::new(sigmoid.clone()(u[29], 29)),
+        Box::new(sigmoid.clone()(u[30], 30)),
+    ]
+}
+
+fn compress_x_gauss<const N: usize>(
+    x: Matrix<N, 63, [f64; N * 63], f64>,
+) -> Matrix<N, 20, [f64; N * 20], f64> {
+    let mut matrix = [0.0; N * 20];
+    for i in 0..N {
+        matrix[i * 10 + 0] = x[i * 63 + 30];
+        matrix[i * 10 + 1] = x[i * 63 + 15];
+        matrix[i * 10 + 2] = x[i * 63 + 3];
+        matrix[i * 10 + 3] = x[i * 63 + 32];
+        matrix[i * 10 + 4] = x[i * 63 + 12];
+        matrix[i * 10 + 5] = x[i * 63 + 33];
+        matrix[i * 10 + 6] = x[i * 63 + 18];
+        matrix[i * 10 + 7] = x[i * 63 + 36];
+        matrix[i * 10 + 8] = x[i * 63 + 11];
+        matrix[i * 10 + 9] = x[i * 63 + 25];
+        matrix[i * 10 + 10] = x[i * 63 + 14];
+        matrix[i * 10 + 11] = x[i * 63 + 16];
+        matrix[i * 10 + 12] = x[i * 63 + 10];
+        matrix[i * 10 + 13] = x[i * 63 + 2];
+        matrix[i * 10 + 14] = x[i * 63 + 62];
+        matrix[i * 10 + 15] = x[i * 63 + 49];
+        matrix[i * 10 + 16] = x[i * 63 + 9];
+        matrix[i * 10 + 17] = x[i * 63 + 35];
+        matrix[i * 10 + 18] = x[i * 63 + 13];
+        matrix[i * 10 + 19] = x[i * 63 + 0];
+        // matrix[i * 10 + 20] = x[i * 63 + 45];
+        // matrix[i * 10 + 21] = x[i * 63 + 57];
+        // matrix[i * 10 + 22] = x[i * 63 + 22];
+        // matrix[i * 10 + 23] = x[i * 63 + 7];
+        // matrix[i * 10 + 24] = x[i * 63 + 52];
+        // matrix[i * 10 + 25] = x[i * 63 + 27];
+        // matrix[i * 10 + 26] = x[i * 63 + 60];
+        // matrix[i * 10 + 27] = x[i * 63 + 29];
+        // matrix[i * 10 + 28] = x[i * 63 + 51];
+        // matrix[i * 10 + 29] = x[i * 63 + 20];
+        // matrix[i * 10 + 30] = x[i * 63 + 31];
+    }
+    Matrix::new(matrix)
+}
+
+fn basis_sigmoid(u: &[f64; 32]) -> [Box<dyn Fn([f64; 32]) -> f64>; 63] {
+    let s = 0.5f64;
+    let sigmoid =
+        move |u: f64, i: usize| move |e: [f64; 32]| 1.0 / (1.0 + f64::exp(-(e[i] - u) / s));
+    [
+        // Box::new(gauss.clone()(2.0, 1.0, 0)),
+        // Box::new(gauss.clone()(1.5, 1.0, 1)),
+        // Box::new(gauss.clone()(2.0, 1.0, 2)),
+        // Box::new(gauss.clone()(3.0, 1.0, 3)),
+        // Box::new(gauss.clone()(1.5, 1.0, 4)),
+        // Box::new(gauss.clone()(1.5, 1.0, 5)),
+        // Box::new(gauss.clone()(1.5, 1.0, 6)),
+        // Box::new(gauss.clone()(3.0, 1.0, 7)),
+        // Box::new(gauss.clone()(2.5, 1.0, 8)),
+        Box::new(|e: [f64; 32]| e[0]),
+        Box::new(|e: [f64; 32]| e[1]),
+        Box::new(|e: [f64; 32]| e[2]),
+        Box::new(|e: [f64; 32]| e[3]),
+        Box::new(|e: [f64; 32]| e[4]),
+        Box::new(|e: [f64; 32]| e[5]),
+        Box::new(|e: [f64; 32]| e[6]),
+        Box::new(|e: [f64; 32]| e[7]),
+        Box::new(|e: [f64; 32]| e[8]),
+        Box::new(|e: [f64; 32]| e[9]),
+        Box::new(|e: [f64; 32]| e[10]),
+        Box::new(|e: [f64; 32]| e[11]),
+        Box::new(|e: [f64; 32]| e[12]),
+        Box::new(|e: [f64; 32]| e[13]),
+        Box::new(|e: [f64; 32]| e[14]),
+        Box::new(|e: [f64; 32]| e[15]),
+        Box::new(|e: [f64; 32]| e[16]),
+        Box::new(|e: [f64; 32]| e[17]),
+        Box::new(|e: [f64; 32]| e[18]),
+        Box::new(|e: [f64; 32]| e[19]),
+        Box::new(|e: [f64; 32]| e[20]),
+        Box::new(|e: [f64; 32]| e[21]),
+        Box::new(|e: [f64; 32]| e[22]),
+        Box::new(|e: [f64; 32]| e[23]),
+        Box::new(|e: [f64; 32]| e[24]),
+        Box::new(|e: [f64; 32]| e[25]),
+        Box::new(|e: [f64; 32]| e[26]),
+        Box::new(|e: [f64; 32]| e[27]),
+        Box::new(|e: [f64; 32]| e[28]),
+        Box::new(|e: [f64; 32]| e[29]),
+        Box::new(|e: [f64; 32]| e[30]),
+        Box::new(|e: [f64; 32]| e[31]),
+        Box::new(sigmoid.clone()(u[0], 0)),
+        Box::new(sigmoid.clone()(u[1], 1)),
+        Box::new(sigmoid.clone()(u[2], 2)),
+        Box::new(sigmoid.clone()(u[3], 3)),
+        Box::new(sigmoid.clone()(u[4], 4)),
+        Box::new(sigmoid.clone()(u[5], 5)),
+        Box::new(sigmoid.clone()(u[6], 6)),
+        Box::new(sigmoid.clone()(u[7], 7)),
+        Box::new(sigmoid.clone()(u[8], 8)),
+        Box::new(sigmoid.clone()(u[9], 9)),
+        Box::new(sigmoid.clone()(u[10], 10)),
+        Box::new(sigmoid.clone()(u[11], 11)),
+        Box::new(sigmoid.clone()(u[12], 12)),
+        Box::new(sigmoid.clone()(u[13], 13)),
+        Box::new(sigmoid.clone()(u[14], 14)),
+        Box::new(sigmoid.clone()(u[15], 15)),
+        Box::new(sigmoid.clone()(u[16], 16)),
+        Box::new(sigmoid.clone()(u[17], 17)),
+        Box::new(sigmoid.clone()(u[18], 18)),
+        Box::new(sigmoid.clone()(u[19], 19)),
+        Box::new(sigmoid.clone()(u[20], 20)),
+        Box::new(sigmoid.clone()(u[21], 21)),
+        Box::new(sigmoid.clone()(u[22], 22)),
+        Box::new(sigmoid.clone()(u[23], 23)),
+        Box::new(sigmoid.clone()(u[24], 24)),
+        Box::new(sigmoid.clone()(u[25], 25)),
+        Box::new(sigmoid.clone()(u[26], 26)),
+        Box::new(sigmoid.clone()(u[27], 27)),
+        Box::new(sigmoid.clone()(u[28], 28)),
+        Box::new(sigmoid.clone()(u[29], 29)),
+        Box::new(sigmoid.clone()(u[30], 30)),
+    ]
 }
 
 fn basis_gauss(u: &[f64; 32]) -> [Box<dyn Fn([f64; 32]) -> f64>; 63] {
