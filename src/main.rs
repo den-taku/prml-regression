@@ -300,18 +300,13 @@ fn main() {
     );
 
     // 09
-    // select effective parameters inspired by w of 01 and 02
+    let count = 09;
+    // select effective parameters inspired by w of 01 ~ 02
     // regularization: lambda = 10.0
-    let lambda = 1.0;
-    let lambda_i = {
-        let mut o = [0.0; 20 * 20];
-        for i in 0..19 {
-            o[i * 19 + i] = lambda;
-        }
-        Matrix::<20, 20, _, _>::new(o)
-    };
+    let compress_train_x = compress_x_weight(train_x.clone());
+    let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
-    let left = lambda_i + phi_t.clone() * phi.clone();
+    let left = phi_t.clone() * phi.clone();
     let right = phi_t.clone() * train_t.clone();
     let w = solve_eqn(left, right);
 
@@ -319,21 +314,41 @@ fn main() {
     for i in 0..w.0.len() {
         content.push_str(&format!("{},\n", w[i]))
     }
-    write_to("./parameters/weight07_select_reg.csv", content)
-        .expect("fail to save weight to ./parameters/weight07_select_ref.csv");
+    let file = "weight09_select_weight.csv";
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
 
-    let inference = compress_x(test_x.clone()) * w.clone();
+    let inference = compress_x_weight(test_x.clone()) * w;
     println!(
-        "test: {} / 45\nerr: {}",
+        "{}: test: {} / 45\nerr: {}",
+        count,
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
         (0..test_t.0.len())
             .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
             .sum::<f64>()
-            / 2.0
-            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
+            / 2.0,
     );
+}
+
+fn compress_x_weight<const N: usize>(
+    x: Matrix<N, 32, [f64; N * 32], f64>,
+) -> Matrix<N, 10, [f64; N * 10], f64> {
+    let mut matrix = [0.0; N * 10];
+    for i in 0..N {
+        matrix[i * 10] = x[i * 32 + 1];
+        matrix[i * 10 + 1] = x[i * 32 + 2];
+        matrix[i * 10 + 2] = x[i * 32 + 4];
+        matrix[i * 10 + 3] = x[i * 32 + 8];
+        matrix[i * 10 + 4] = x[i * 32 + 9];
+        matrix[i * 10 + 5] = x[i * 32 + 13];
+        matrix[i * 10 + 6] = x[i * 32 + 17];
+        matrix[i * 10 + 7] = x[i * 32 + 19];
+        matrix[i * 10 + 8] = x[i * 32 + 28];
+        matrix[i * 10 + 9] = x[i * 32 + 31];
+    }
+    Matrix::new(matrix)
 }
 
 fn compress_x<const N: usize>(
