@@ -302,7 +302,6 @@ fn main() {
     // 09
     let count = 09;
     // select effective parameters inspired by w of 01 ~ 02
-    // regularization: lambda = 10.0
     let compress_train_x = compress_x_weight(train_x.clone());
     let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
@@ -318,7 +317,7 @@ fn main() {
     write_to(&format!("./parameters/{}", file), content)
         .expect(&format!("fail to save weight to ./parameters/{}", file));
 
-    let inference = compress_x_weight(test_x.clone()) * w;
+    let inference = compress_x_weight(test_x.clone()) * w.clone();
     println!(
         "{}: test: {} / 45\nerr: {}",
         count,
@@ -330,6 +329,213 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
+
+    // 10
+    let count = 10;
+    // select effective parameters inspired by w of 01 ~ 02
+    // regularization: lambda = 1.0
+    let compress_train_x = compress_x_weight(train_x.clone());
+    let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
+
+    let lambda = 1.0;
+    let lambda_i = {
+        let mut o = [0.0; 10 * 10];
+        for i in 0..10 {
+            o[i * 10 + i] = lambda;
+        }
+        Matrix::<10, 10, _, _>::new(o)
+    };
+
+    let left = lambda_i + phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = "weight10_select_weight_reg.csv";
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference = compress_x_weight(test_x.clone()) * w.clone();
+    println!(
+        "{}: test: {} / 45\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
+
+    // 11
+    let count = 11;
+    // select effective parameters inspired by w of 01 ~ 02
+    // regularization: lambda = 5.0
+    let compress_train_x = compress_x_weight(train_x.clone());
+    let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
+
+    let lambda = 5.0;
+    let lambda_i = {
+        let mut o = [0.0; 10 * 10];
+        for i in 0..10 {
+            o[i * 10 + i] = lambda;
+        }
+        Matrix::<10, 10, _, _>::new(o)
+    };
+
+    let left = lambda_i + phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = "weight11_select_weight_reg.csv";
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference = compress_x_weight(test_x.clone()) * w.clone();
+    println!(
+        "{}: test: {} / 45\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
+
+    // 12
+    let count = 12;
+    // select effective parameters inspired by w of 01 ~ 02
+    // regularization: lambda = 0.5
+    let compress_train_x = compress_x_weight(train_x.clone());
+    let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
+
+    let lambda = 0.5;
+    let lambda_i = {
+        let mut o = [0.0; 10 * 10];
+        for i in 0..10 {
+            o[i * 10 + i] = lambda;
+        }
+        Matrix::<10, 10, _, _>::new(o)
+    };
+
+    let left = lambda_i + phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = "weight12_select_weight_reg.csv";
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference = compress_x_weight(test_x.clone()) * w.clone();
+    println!(
+        "{}: test: {} / 45\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
+
+    // 13
+    let count = 13;
+    // select effective parameters inspired by w of 10 ~ 12
+    let compress_train_x = compress_x_weight2(train_x.clone());
+    let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
+
+    let left = phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = "weight13_select_weight2_reg.csv";
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference = compress_x_weight2(test_x.clone()) * w.clone();
+    println!(
+        "{}: test: {} / 45\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0,
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+    // dbg!("{:#?}", order);
+}
+
+fn compress_x_weight2<const N: usize>(
+    x: Matrix<N, 32, [f64; N * 32], f64>,
+) -> Matrix<N, 6, [f64; N * 6], f64> {
+    let mut matrix = [0.0; N * 6];
+    for i in 0..N {
+        matrix[i * 6] = x[i * 32 + 1];
+        matrix[i * 6 + 1] = x[i * 32 + 4];
+        matrix[i * 6 + 2] = x[i * 32 + 9];
+        matrix[i * 6 + 3] = x[i * 32 + 17];
+        matrix[i * 6 + 4] = x[i * 32 + 19];
+        matrix[i * 6 + 5] = x[i * 32 + 31];
+    }
+    Matrix::new(matrix)
 }
 
 fn compress_x_weight<const N: usize>(
