@@ -1349,6 +1349,265 @@ fn main() {
             .map(|(i, v)| (v.abs(), i + 1))
             .collect::<Vec<_>>();
     order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+
+    // 29
+    let count = 29;
+    // more comlex  with reg
+    let mut us = [0.0; 32];
+    for i in 0..TRAIN_CASE {
+        for j in 0..32 {
+            us[j] += train_x[i * 32 + j];
+        }
+    }
+    for u in &mut us {
+        *u /= TRAIN_CASE as f64;
+    }
+    let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_more(&us));
+    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
+
+    let lambda = 1e-5;
+    let lambda_i = {
+        const SIZE: usize = 187;
+        let mut o = [0.0; SIZE * SIZE];
+        for i in 0..SIZE {
+            o[i * SIZE + i] = lambda;
+        }
+        Matrix::<SIZE, SIZE, _, _>::new(o)
+    };
+
+    let left = lambda_i + phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = &format!("weight{count}_more_reg.csv");
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference = design_matrix(&test_x.clone(), &basis_more(&us)).0 * w.clone();
+    println!(
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .map(|i| {
+                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
+                i
+            })
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
+    );
+    let mut order =
+        w.0.iter()
+            .enumerate()
+            .map(|(i, v)| (v.abs(), i + 1))
+            .collect::<Vec<_>>();
+    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+}
+
+fn basis_more(u: &[f64; 32]) -> [Box<dyn Fn([f64; 32]) -> f64>; 187] {
+    let s = 0.5f64;
+    let gauss = move |u: f64, i: usize| {
+        move |e: [f64; 32]| f64::exp(-(e[i] - u) * (e[i] - u) / 2.0 / (s * s))
+    };
+    let sigmoid =
+        move |u: f64, i: usize| move |e: [f64; 32]| 1.0 / (1.0 + f64::exp(-(e[i] - u) / s));
+    [
+        Box::new(|e: [f64; 32]| e[0]),
+        Box::new(|e: [f64; 32]| e[1]),
+        Box::new(|e: [f64; 32]| e[2]),
+        Box::new(|e: [f64; 32]| e[3]),
+        Box::new(|e: [f64; 32]| e[4]),
+        Box::new(|e: [f64; 32]| e[5]),
+        Box::new(|e: [f64; 32]| e[6]),
+        Box::new(|e: [f64; 32]| e[7]),
+        Box::new(|e: [f64; 32]| e[8]),
+        Box::new(|e: [f64; 32]| e[9]),
+        Box::new(|e: [f64; 32]| e[10]),
+        Box::new(|e: [f64; 32]| e[11]),
+        Box::new(|e: [f64; 32]| e[12]),
+        Box::new(|e: [f64; 32]| e[13]),
+        Box::new(|e: [f64; 32]| e[14]),
+        Box::new(|e: [f64; 32]| e[15]),
+        Box::new(|e: [f64; 32]| e[16]),
+        Box::new(|e: [f64; 32]| e[17]),
+        Box::new(|e: [f64; 32]| e[18]),
+        Box::new(|e: [f64; 32]| e[19]),
+        Box::new(|e: [f64; 32]| e[20]),
+        Box::new(|e: [f64; 32]| e[21]),
+        Box::new(|e: [f64; 32]| e[22]),
+        Box::new(|e: [f64; 32]| e[23]),
+        Box::new(|e: [f64; 32]| e[24]),
+        Box::new(|e: [f64; 32]| e[25]),
+        Box::new(|e: [f64; 32]| e[26]),
+        Box::new(|e: [f64; 32]| e[27]),
+        Box::new(|e: [f64; 32]| e[28]),
+        Box::new(|e: [f64; 32]| e[29]),
+        Box::new(|e: [f64; 32]| e[30]),
+        Box::new(|e: [f64; 32]| e[31]),
+        Box::new(|e: [f64; 32]| e[0] * e[0]),
+        Box::new(|e: [f64; 32]| e[1] * e[1]),
+        Box::new(|e: [f64; 32]| e[2] * e[2]),
+        Box::new(|e: [f64; 32]| e[3] * e[3]),
+        Box::new(|e: [f64; 32]| e[4] * e[4]),
+        Box::new(|e: [f64; 32]| e[5] * e[5]),
+        Box::new(|e: [f64; 32]| e[6] * e[6]),
+        Box::new(|e: [f64; 32]| e[7] * e[7]),
+        Box::new(|e: [f64; 32]| e[8] * e[8]),
+        Box::new(|e: [f64; 32]| e[9] * e[9]),
+        Box::new(|e: [f64; 32]| e[10] * e[10]),
+        Box::new(|e: [f64; 32]| e[11] * e[11]),
+        Box::new(|e: [f64; 32]| e[12] * e[12]),
+        Box::new(|e: [f64; 32]| e[13] * e[13]),
+        Box::new(|e: [f64; 32]| e[14] * e[14]),
+        Box::new(|e: [f64; 32]| e[15] * e[15]),
+        Box::new(|e: [f64; 32]| e[16] * e[16]),
+        Box::new(|e: [f64; 32]| e[17] * e[17]),
+        Box::new(|e: [f64; 32]| e[18] * e[18]),
+        Box::new(|e: [f64; 32]| e[19] * e[19]),
+        Box::new(|e: [f64; 32]| e[20] * e[20]),
+        Box::new(|e: [f64; 32]| e[21] * e[21]),
+        Box::new(|e: [f64; 32]| e[22] * e[22]),
+        Box::new(|e: [f64; 32]| e[23] * e[23]),
+        Box::new(|e: [f64; 32]| e[24] * e[24]),
+        Box::new(|e: [f64; 32]| e[25] * e[25]),
+        Box::new(|e: [f64; 32]| e[26] * e[26]),
+        Box::new(|e: [f64; 32]| e[27] * e[27]),
+        Box::new(|e: [f64; 32]| e[28] * e[28]),
+        Box::new(|e: [f64; 32]| e[29] * e[29]),
+        Box::new(|e: [f64; 32]| e[30] * e[30]),
+        Box::new(|e: [f64; 32]| e[0] * e[0] * e[0]),
+        Box::new(|e: [f64; 32]| e[1] * e[1] * e[1]),
+        Box::new(|e: [f64; 32]| e[2] * e[2] * e[2]),
+        Box::new(|e: [f64; 32]| e[3] * e[3] * e[3]),
+        Box::new(|e: [f64; 32]| e[4] * e[4] * e[4]),
+        Box::new(|e: [f64; 32]| e[5] * e[5] * e[5]),
+        Box::new(|e: [f64; 32]| e[6] * e[6] * e[6]),
+        Box::new(|e: [f64; 32]| e[7] * e[7] * e[7]),
+        Box::new(|e: [f64; 32]| e[8] * e[8] * e[8]),
+        Box::new(|e: [f64; 32]| e[9] * e[9] * e[9]),
+        Box::new(|e: [f64; 32]| e[10] * e[10] * e[10]),
+        Box::new(|e: [f64; 32]| e[11] * e[11] * e[11]),
+        Box::new(|e: [f64; 32]| e[12] * e[12] * e[12]),
+        Box::new(|e: [f64; 32]| e[13] * e[13] * e[13]),
+        Box::new(|e: [f64; 32]| e[14] * e[14] * e[14]),
+        Box::new(|e: [f64; 32]| e[15] * e[15] * e[15]),
+        Box::new(|e: [f64; 32]| e[16] * e[16] * e[16]),
+        Box::new(|e: [f64; 32]| e[17] * e[17] * e[17]),
+        Box::new(|e: [f64; 32]| e[18] * e[18] * e[18]),
+        Box::new(|e: [f64; 32]| e[19] * e[19] * e[19]),
+        Box::new(|e: [f64; 32]| e[20] * e[20] * e[20]),
+        Box::new(|e: [f64; 32]| e[21] * e[21] * e[21]),
+        Box::new(|e: [f64; 32]| e[22] * e[22] * e[22]),
+        Box::new(|e: [f64; 32]| e[23] * e[23] * e[23]),
+        Box::new(|e: [f64; 32]| e[24] * e[24] * e[24]),
+        Box::new(|e: [f64; 32]| e[25] * e[25] * e[25]),
+        Box::new(|e: [f64; 32]| e[26] * e[26] * e[26]),
+        Box::new(|e: [f64; 32]| e[27] * e[27] * e[27]),
+        Box::new(|e: [f64; 32]| e[28] * e[28] * e[28]),
+        Box::new(|e: [f64; 32]| e[29] * e[29] * e[29]),
+        Box::new(|e: [f64; 32]| e[30] * e[30] * e[30]),
+        Box::new(|e: [f64; 32]| e[0] * e[0] * e[0] * e[0]),
+        Box::new(|e: [f64; 32]| e[1] * e[1] * e[1] * e[1]),
+        Box::new(|e: [f64; 32]| e[2] * e[2] * e[2] * e[2]),
+        Box::new(|e: [f64; 32]| e[3] * e[3] * e[3] * e[3]),
+        Box::new(|e: [f64; 32]| e[4] * e[4] * e[4] * e[4]),
+        Box::new(|e: [f64; 32]| e[5] * e[5] * e[5] * e[5]),
+        Box::new(|e: [f64; 32]| e[6] * e[6] * e[6] * e[6]),
+        Box::new(|e: [f64; 32]| e[7] * e[7] * e[7] * e[7]),
+        Box::new(|e: [f64; 32]| e[8] * e[8] * e[8] * e[8]),
+        Box::new(|e: [f64; 32]| e[9] * e[9] * e[9] * e[9]),
+        Box::new(|e: [f64; 32]| e[10] * e[10] * e[10] * e[10]),
+        Box::new(|e: [f64; 32]| e[11] * e[11] * e[11] * e[11]),
+        Box::new(|e: [f64; 32]| e[12] * e[12] * e[12] * e[12]),
+        Box::new(|e: [f64; 32]| e[13] * e[13] * e[13] * e[13]),
+        Box::new(|e: [f64; 32]| e[14] * e[14] * e[14] * e[14]),
+        Box::new(|e: [f64; 32]| e[15] * e[15] * e[15] * e[15]),
+        Box::new(|e: [f64; 32]| e[16] * e[16] * e[16] * e[16]),
+        Box::new(|e: [f64; 32]| e[17] * e[17] * e[17] * e[17]),
+        Box::new(|e: [f64; 32]| e[18] * e[18] * e[18] * e[18]),
+        Box::new(|e: [f64; 32]| e[19] * e[19] * e[19] * e[19]),
+        Box::new(|e: [f64; 32]| e[20] * e[20] * e[20] * e[20]),
+        Box::new(|e: [f64; 32]| e[21] * e[21] * e[21] * e[21]),
+        Box::new(|e: [f64; 32]| e[22] * e[22] * e[22] * e[22]),
+        Box::new(|e: [f64; 32]| e[23] * e[23] * e[23] * e[23]),
+        Box::new(|e: [f64; 32]| e[24] * e[24] * e[24] * e[24]),
+        Box::new(|e: [f64; 32]| e[25] * e[25] * e[25] * e[25]),
+        Box::new(|e: [f64; 32]| e[26] * e[26] * e[26] * e[26]),
+        Box::new(|e: [f64; 32]| e[27] * e[27] * e[27] * e[27]),
+        Box::new(|e: [f64; 32]| e[28] * e[28] * e[28] * e[28]),
+        Box::new(|e: [f64; 32]| e[29] * e[29] * e[29] * e[29]),
+        Box::new(|e: [f64; 32]| e[30] * e[30] * e[30] * e[30]),
+        Box::new(gauss.clone()(u[0], 0)),
+        Box::new(gauss.clone()(u[1], 1)),
+        Box::new(gauss.clone()(u[2], 2)),
+        Box::new(gauss.clone()(u[3], 3)),
+        Box::new(gauss.clone()(u[4], 4)),
+        Box::new(gauss.clone()(u[5], 5)),
+        Box::new(gauss.clone()(u[6], 6)),
+        Box::new(gauss.clone()(u[7], 7)),
+        Box::new(gauss.clone()(u[8], 8)),
+        Box::new(gauss.clone()(u[9], 9)),
+        Box::new(gauss.clone()(u[10], 10)),
+        Box::new(gauss.clone()(u[11], 11)),
+        Box::new(gauss.clone()(u[12], 12)),
+        Box::new(gauss.clone()(u[13], 13)),
+        Box::new(gauss.clone()(u[14], 14)),
+        Box::new(gauss.clone()(u[15], 15)),
+        Box::new(gauss.clone()(u[16], 16)),
+        Box::new(gauss.clone()(u[17], 17)),
+        Box::new(gauss.clone()(u[18], 18)),
+        Box::new(gauss.clone()(u[19], 19)),
+        Box::new(gauss.clone()(u[20], 20)),
+        Box::new(gauss.clone()(u[21], 21)),
+        Box::new(gauss.clone()(u[22], 22)),
+        Box::new(gauss.clone()(u[23], 23)),
+        Box::new(gauss.clone()(u[24], 24)),
+        Box::new(gauss.clone()(u[25], 25)),
+        Box::new(gauss.clone()(u[26], 26)),
+        Box::new(gauss.clone()(u[27], 27)),
+        Box::new(gauss.clone()(u[28], 28)),
+        Box::new(gauss.clone()(u[29], 29)),
+        Box::new(gauss.clone()(u[30], 30)),
+        Box::new(sigmoid.clone()(u[0], 0)),
+        Box::new(sigmoid.clone()(u[1], 1)),
+        Box::new(sigmoid.clone()(u[2], 2)),
+        Box::new(sigmoid.clone()(u[3], 3)),
+        Box::new(sigmoid.clone()(u[4], 4)),
+        Box::new(sigmoid.clone()(u[5], 5)),
+        Box::new(sigmoid.clone()(u[6], 6)),
+        Box::new(sigmoid.clone()(u[7], 7)),
+        Box::new(sigmoid.clone()(u[8], 8)),
+        Box::new(sigmoid.clone()(u[9], 9)),
+        Box::new(sigmoid.clone()(u[10], 10)),
+        Box::new(sigmoid.clone()(u[11], 11)),
+        Box::new(sigmoid.clone()(u[12], 12)),
+        Box::new(sigmoid.clone()(u[13], 13)),
+        Box::new(sigmoid.clone()(u[14], 14)),
+        Box::new(sigmoid.clone()(u[15], 15)),
+        Box::new(sigmoid.clone()(u[16], 16)),
+        Box::new(sigmoid.clone()(u[17], 17)),
+        Box::new(sigmoid.clone()(u[18], 18)),
+        Box::new(sigmoid.clone()(u[19], 19)),
+        Box::new(sigmoid.clone()(u[20], 20)),
+        Box::new(sigmoid.clone()(u[21], 21)),
+        Box::new(sigmoid.clone()(u[22], 22)),
+        Box::new(sigmoid.clone()(u[23], 23)),
+        Box::new(sigmoid.clone()(u[24], 24)),
+        Box::new(sigmoid.clone()(u[25], 25)),
+        Box::new(sigmoid.clone()(u[26], 26)),
+        Box::new(sigmoid.clone()(u[27], 27)),
+        Box::new(sigmoid.clone()(u[28], 28)),
+        Box::new(sigmoid.clone()(u[29], 29)),
+        Box::new(sigmoid.clone()(u[30], 30)),
+    ]
 }
 
 fn basis_all_more(u: &[f64; 32]) -> [Box<dyn Fn([f64; 32]) -> f64>; 187] {
