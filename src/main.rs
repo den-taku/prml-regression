@@ -8,6 +8,13 @@ fn main() {
     const TEST_CASE: usize = 30;
     let ((train_x, train_t), (test_x, test_t)) = data::<TRAIN_CASE, TEST_CASE>();
 
+    let model = std::env::args()
+        .collect::<Vec<String>>()
+        .get(1)
+        .expect("MODEL_NUMBER is needed")
+        .parse::<usize>()
+        .expect("MODEL_NUM is number.");
+
     // 01
     // y(x, w) = w_0 + w_1*x_1 + ... + w_D * x_D
     // p(t|x, w, b) = N(t|y(x,w), b^-1)
@@ -27,7 +34,7 @@ fn main() {
 
     let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / {TEST_CASE}\nerr: {}",
+        "1: test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -36,13 +43,6 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 02
     // y(x, w) = w_0 + w_1*x_1 + ... + w_D * x_D
@@ -69,7 +69,7 @@ fn main() {
 
     let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / {TEST_CASE}\nerr: {}",
+        "2: test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -79,13 +79,6 @@ fn main() {
             / 2.0
             + lambda / 2.0 * w.clone().0.iter().map(|e| e * e).sum::<f64>(),
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 03
     // y(x, w) = w_0 + w_1*x_1 + ... + w_D * x_D
@@ -112,7 +105,7 @@ fn main() {
 
     let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / {TEST_CASE}\nerr: {}",
+        "3: test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -122,13 +115,6 @@ fn main() {
             / 2.0
             + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 04
     // y(x, w) = w_0 + w_1*x_1 + ... + w_D * x_D
@@ -155,7 +141,7 @@ fn main() {
 
     let inference = test_x.clone() * w.clone();
     println!(
-        "test: {} / {TEST_CASE}\nerr: {}",
+        "4: test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -164,41 +150,6 @@ fn main() {
             .sum::<f64>()
             / 2.0
             + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
-    );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
-
-    // 05
-    // phi_i = exp(-(x_i - u)^2 / 2s^2)
-    let gauss_0_31 = gauss_slice();
-    let (phi, phi_t) = design_matrix(&train_x, &gauss_0_31);
-
-    let left = phi_t.clone() * phi.clone();
-    let right = phi_t.clone() * train_t.clone();
-    let w = solve_eqn(left, right);
-
-    let mut content = String::new();
-    for i in 0..w.0.len() {
-        content.push_str(&format!("{},\n", w[i]))
-    }
-    write_to("./parameters/weight05_all_gauss.csv", content)
-        .expect("fail to save weight to ./parameters/weight05_all_gauss.csv");
-
-    let inference = design_matrix(&test_x, &gauss_0_31).0 * w;
-    println!(
-        "test: {} / {TEST_CASE}\nerr: {}",
-        (0..test_t.0.len())
-            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
-            .count(),
-        (0..test_t.0.len())
-            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
-            .sum::<f64>()
-            / 2.0,
     );
 
     // 06
@@ -219,7 +170,7 @@ fn main() {
 
     let inference = compress_x(test_x.clone()) * w;
     println!(
-        "test: {} / {TEST_CASE}\nerr: {}",
+        "6: test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -231,7 +182,7 @@ fn main() {
 
     // 07
     // select effective parameters
-    // regularization: lambda = 10.0
+    // regularization: lambda = 1.0
     let lambda = 1.0;
     let lambda_i = {
         let mut o = [0.0; 20 * 20];
@@ -254,7 +205,7 @@ fn main() {
 
     let inference = compress_x(test_x.clone()) * w.clone();
     println!(
-        "test: {} / {TEST_CASE}\nerr: {}",
+        "7: test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -290,7 +241,7 @@ fn main() {
 
     let inference = compress_x(test_x.clone()) * w.clone();
     println!(
-        "test: {} / {TEST_CASE}\nerr: {}",
+        "8: test: {} / {TEST_CASE}\nerr: {}",
         (0..test_t.0.len())
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
@@ -303,7 +254,7 @@ fn main() {
 
     // 09
     let count = 09;
-    // select effective parameters inspired by w of 01 ~ 02
+    // select effective parameters inspired by w of 01 ~ 04
     let compress_train_x = compress_x_weight(train_x.clone());
     let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
@@ -335,17 +286,10 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 10
     let count = 10;
-    // select effective parameters inspired by w of 01 ~ 02
+    // select effective parameters inspired by w of 01 ~ 04
     // regularization: lambda = 1.0
     let compress_train_x = compress_x_weight(train_x.clone());
     let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
@@ -384,17 +328,10 @@ fn main() {
             / 2.0
             + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 11
     let count = 11;
-    // select effective parameters inspired by w of 01 ~ 02
+    // select effective parameters inspired by w of 01 ~ 04
     // regularization: lambda = 5.0
     let compress_train_x = compress_x_weight(train_x.clone());
     let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
@@ -433,17 +370,10 @@ fn main() {
             / 2.0
             + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 12
     let count = 12;
-    // select effective parameters inspired by w of 01 ~ 02
+    // select effective parameters inspired by w of 01 ~ 04
     // regularization: lambda = 0.5
     let compress_train_x = compress_x_weight(train_x.clone());
     let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
@@ -482,13 +412,6 @@ fn main() {
             / 2.0
             + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 13
     let count = 13;
@@ -520,19 +443,11 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 14
     let count = 14;
-    // select effective parameters inspired by w of 01 ~ 02
+    // select effective parameters inspired by w of 01 ~ 04
     let (phi, phi_t) = design_matrix(&compress_x_weight(train_x.clone()), &basis());
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let left = phi_t.clone() * phi.clone();
     let right = phi_t.clone() * train_t.clone();
@@ -604,19 +519,11 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 16
     let count = 16;
     // polynomial fitting with regularization
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_poly());
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let lambda = 5.0;
     let lambda_i = {
@@ -657,19 +564,11 @@ fn main() {
             / 2.0
             + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 17
     let count = 17;
     // polynomial^3 fitting
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_poly3());
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let left = phi_t.clone() * phi.clone();
     let right = phi_t.clone() * train_t.clone();
@@ -699,13 +598,6 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 18
     let count = 18;
@@ -740,10 +632,6 @@ fn main() {
         "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
-            .map(|i| {
-                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
-                i
-            })
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
         (0..test_t.0.len())
@@ -751,13 +639,6 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 19
     let count = 19;
@@ -772,7 +653,6 @@ fn main() {
         *u /= TRAIN_CASE as f64;
     }
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_gauss(&us));
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let left = phi_t.clone() * phi.clone();
     let right = phi_t.clone() * train_t.clone();
@@ -791,10 +671,6 @@ fn main() {
         "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
-            .map(|i| {
-                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
-                i
-            })
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
         (0..test_t.0.len())
@@ -802,13 +678,6 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 20
     let count = 20;
@@ -823,7 +692,6 @@ fn main() {
         *u /= TRAIN_CASE as f64;
     }
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_gauss(&us));
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let lambda = 10.0;
     let lambda_i = {
@@ -852,10 +720,6 @@ fn main() {
         "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
-            .map(|i| {
-                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
-                i
-            })
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
         (0..test_t.0.len())
@@ -863,13 +727,6 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 21
     let count = 21;
@@ -884,7 +741,6 @@ fn main() {
         *u /= TRAIN_CASE as f64;
     }
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_sigmoid(&us));
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let left = phi_t.clone() * phi.clone();
     let right = phi_t.clone() * train_t.clone();
@@ -903,10 +759,6 @@ fn main() {
         "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
-            .map(|i| {
-                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
-                i
-            })
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
         (0..test_t.0.len())
@@ -914,13 +766,6 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 22
     let count = 22;
@@ -935,7 +780,6 @@ fn main() {
         *u /= TRAIN_CASE as f64;
     }
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_sigmoid(&us));
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let lambda = 2.0;
     let lambda_i = {
@@ -964,10 +808,6 @@ fn main() {
         "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
-            .map(|i| {
-                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
-                i
-            })
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
         (0..test_t.0.len())
@@ -975,12 +815,6 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
 
     // 23
     let count = 23;
@@ -1026,13 +860,6 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 24
     let count = 24;
@@ -1077,10 +904,6 @@ fn main() {
         "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
-            .map(|i| {
-                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
-                i
-            })
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
         (0..test_t.0.len())
@@ -1088,13 +911,6 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 25
     let count = 25;
@@ -1109,7 +925,6 @@ fn main() {
         *u /= TRAIN_CASE as f64;
     }
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_all(&us));
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let left = phi_t.clone() * phi.clone();
     let right = phi_t.clone() * train_t.clone();
@@ -1128,10 +943,6 @@ fn main() {
         "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
-            .map(|i| {
-                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
-                i
-            })
             .filter_map(|i| (if inference[i].round() >= 7.0 {
                 7.0
             } else {
@@ -1154,13 +965,6 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 26
     let count = 26;
@@ -1175,7 +979,6 @@ fn main() {
         *u /= TRAIN_CASE as f64;
     }
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_all(&us));
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let lambda = 1e-5;
     let lambda_i = {
@@ -1204,10 +1007,6 @@ fn main() {
         "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
-            .map(|i| {
-                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
-                i
-            })
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
         (0..test_t.0.len())
@@ -1216,12 +1015,6 @@ fn main() {
             / 2.0
             + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
 
     // 27
     let count = 27;
@@ -1236,7 +1029,6 @@ fn main() {
         *u /= TRAIN_CASE as f64;
     }
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_all_more(&us));
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let left = phi_t.clone() * phi.clone();
     let right = phi_t.clone() * train_t.clone();
@@ -1255,10 +1047,6 @@ fn main() {
         "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
-            .map(|i| {
-                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
-                i
-            })
             .filter_map(|i| (if inference[i].round() >= 7.0 {
                 7.0
             } else {
@@ -1281,13 +1069,6 @@ fn main() {
             .sum::<f64>()
             / 2.0,
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    // dbg!("{:#?}", order);
 
     // 28
     let count = 28;
@@ -1302,7 +1083,6 @@ fn main() {
         *u /= TRAIN_CASE as f64;
     }
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_all_more(&us));
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let lambda = 1e-5;
     let lambda_i = {
@@ -1331,10 +1111,6 @@ fn main() {
         "{}: test: {} / {TEST_CASE}\nerr: {}",
         count,
         (0..test_t.0.len())
-            .map(|i| {
-                // println!("{i}: t = {} but y = {}", test_t[i], inference[i]);
-                i
-            })
             .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
             .count(),
         (0..test_t.0.len())
@@ -1343,12 +1119,6 @@ fn main() {
             / 2.0
             + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
 
     // 29
     let count = 29;
@@ -1363,7 +1133,6 @@ fn main() {
         *u /= TRAIN_CASE as f64;
     }
     let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_more(&us));
-    // let (phi, phi_t) = (compress_train_x.clone(), compress_train_x.transpose());
 
     let lambda = 1e-5;
     let lambda_i = {
@@ -1404,12 +1173,55 @@ fn main() {
             / 2.0
             + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
     );
-    let mut order =
-        w.0.iter()
-            .enumerate()
-            .map(|(i, v)| (v.abs(), i + 1))
-            .collect::<Vec<_>>();
-    order.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+
+    // 30
+    let count = 30;
+    // sigmoid fitting with reg
+    let lambda = 0.5;
+    let lambda_i = {
+        const SIZE: usize = 63;
+        let mut o = [0.0; SIZE * SIZE];
+        for i in 0..SIZE {
+            o[i * SIZE + i] = lambda;
+        }
+        Matrix::<SIZE, SIZE, _, _>::new(o)
+    };
+    let mut us = [0.0; 32];
+    for i in 0..TRAIN_CASE {
+        for j in 0..32 {
+            us[j] += train_x[i * 32 + j];
+        }
+    }
+    for u in &mut us {
+        *u /= TRAIN_CASE as f64;
+    }
+    let (phi, phi_t) = design_matrix(&train_x.clone(), &basis_sigmoid(&us));
+
+    let left = lambda_i + phi_t.clone() * phi.clone();
+    let right = phi_t.clone() * train_t.clone();
+    let w = solve_eqn(left, right);
+
+    let mut content = String::new();
+    for i in 0..w.0.len() {
+        content.push_str(&format!("{},\n", w[i]))
+    }
+    let file = &format!("weight{count}_sigmoid_reg.csv");
+    write_to(&format!("./parameters/{}", file), content)
+        .expect(&format!("fail to save weight to ./parameters/{}", file));
+
+    let inference = design_matrix(&test_x.clone(), &basis_sigmoid(&us)).0 * w.clone();
+    println!(
+        "{}: test: {} / {TEST_CASE}\nerr: {}",
+        count,
+        (0..test_t.0.len())
+            .filter_map(|i| (inference[i].round() as i64 == test_t[i] as i64).then(|| 0))
+            .count(),
+        (0..test_t.0.len())
+            .map(|i| (inference[i] - test_t[i]) * (inference[i] - test_t[i]))
+            .sum::<f64>()
+            / 2.0
+            + lambda / 2.0 * w.0.iter().map(|e| e * e).sum::<f64>(),
+    );
 }
 
 fn basis_more(u: &[f64; 32]) -> [Box<dyn Fn([f64; 32]) -> f64>; 187] {
@@ -2492,7 +2304,7 @@ fn _select_parameters() -> [Box<dyn Fn([f64; 32]) -> f64>; 32] {
     ]
 }
 
-fn gauss_slice() -> [Box<dyn Fn([f64; 32]) -> f64>; 32] {
+fn _gauss_slice() -> [Box<dyn Fn([f64; 32]) -> f64>; 32] {
     let id = |e: [f64; 32]| e[31];
     let gauss = move |u: f64, s: f64, i: usize| {
         move |e: [f64; 32]| f64::exp(-(e[i] - u) * (e[i] - u) / 2.0 / (s * s))
